@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<link rel="stylesheet" type="text/css" href="style.css" />
+
+		<title>SR Booster</title>
+	</head>
+	<body>
+		<h1 id="title">SR Booster</h1>
+		<div class="holder">
+			<div class="playerTickets">
+				<label>ticket P1 &gt;</label>
+				<input type="text" id="p1ticket" />
+				<input type="text" id="p2ticket" />
+				<label>&lt; P2 ticket</label>
+			</div>
+			<div class="playerIds">
+				<label>steam ID P1 &gt;</label>
+				<input type="text" id="p1playerId" />
+				<input type="text" id="p2playerId" />
+				<label>&lt; P2 steam ID</label>
+			</div>
+			<div class="playerScores">
+				<label>score P1 &gt;</label>
+				<input type="number" style="width: 80px" id="p1score" />
+				<input type="number" style="width: 80px" id="p2score" />
+				<label>&lt; P2 score</label>
+				<input type="checkbox" id="randomCheck" />
+				<label>&lt; Random? (P1 preffered)</label>
+			</div>
+			<div class="rankOutput">
+				<button id="getRankDetailsPlayer1Btn">Get rank P1</button>
+				<input type="text" disabled id="p1rank" />
+				<input type="text" disabled id="p2rank" />
+				<button id="getRankDetailsPlayer2Btn">Get rank P2</button>
+			</div>
+			<div class="checkButtons">
+				<button id="checkInBtn">Check In</button>
+				<input type="text" disabled id="checkInSuccess" />
+				<input type="text" disabled id="checkOutSuccess" />
+				<button id="checkOutBtn">Check Out</button>
+			</div>
+			<div class="automated-buttons">
+				<button id="startBtn">Start Loop</button>
+				<label>loops &gt;</label>
+				<input type="text" style="width: 20px" id="howManyLoopsInput" />
+				<input type="text" disabled id="loopOutput" />
+				<input type="text" style="width: 40px" disabled id="secondsLeft" />
+				<label>&lt; status</label>
+				<button id="stopBtn">Stop</button>
+			</div>
+			<div class="logger">
+				<textarea name="log" disabled style="resize: vertical; overflow-y: scroll" id="log" cols="70" rows="15"></textarea>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="script.js"></script>
+</html>
