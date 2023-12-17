@@ -1,98 +1,168 @@
 import axios from 'axios';
-import express, { urlencoded } from 'express';
+import fs from 'fs';
+import PromptSync from 'prompt-sync';
 
-let app = express();
-app.use(express.json());
-app.use(
-	urlencoded({
-		extended: true,
-	})
-);
-app.use(express.static('public'));
+// ----- constants -----
+const prompt = PromptSync();
 axios.defaults.headers.common = {};
-
 let APILink = 'http://league.speedrunners.doubledutchgames.com/';
+let pathGetRanking = 'Service/GetRanking';
+let pathCheckIn = 'Service/CheckIn';
+let pathCheckOut = 'Service/CheckOut';
+// ----- configuration -----
 let debugging = false;
+let checkOutAverage = 90; // default: 90
+let cooldownAverage = 45; // default: 45
+let p1id = 969447309;
+let p2id = 48800273;
+let p1ticket = 1076816120;
+let p2ticket = 1486945010;
+// ----- variables -----
+let duration = 0;
+let cooldown = 0;
+let p1score = 3;
+let p2score = 0;
+let iterations = 0;
+// ----- end -----
 
-async function getRankingDetails(details) {
-	if (details == null) return;
+async function main() {
+	log('Starting service');
 
-	let URLPath = APILink + 'Service/GetRanking';
+	// ask for player id
+	let input;
+	input = prompt('player 1 ID: ');
+	p1id = input == 0 ? p1id : input;
+	input = prompt('player 2 ID: ');
+	p2id = input == 0 ? p2id : input;
 
-	let ticket = details.ticket;
-	let playerId = details.playerId;
+	// ask for tickets
+	input = prompt('player 1 ticket: ');
+	p1ticket = input == 0 ? p1ticket : input;
+	input = prompt('player 2 ticket: ');
+	p2ticket = input == 0 ? p2ticket : input;
 
-	let requestBody = `v=107&code=${ticket}&id=${playerId}`;
-	let header = { headers: { 'Content-Length': requestBody.length, 'User-Agent': '', 'Accept-Encoding': '' } };
+	// cold start
+	log(`Player 1 rank: ${await getRankingDetails(p1ticket, p1id)}`);
+	log(`Player 2 rank: ${await getRankingDetails(p2ticket, p2id)}`);
 
-	if (!debugging) {
-		let response = (await axios.post(URLPath, requestBody, header)).data;
-		return response;
+	input = prompt('Start? ');
+	if (input == 0) process.exit(0);
+
+	while (true) {
+		iterations++;
+		duration = getRandom(checkOutAverage - 20, checkOutAverage + 20);
+		cooldown = getRandom(cooldownAverage - 10, cooldownAverage + 10);
+		randomiseScores();
+
+		await callAPIfn(checkIn);
+		log(`Checked in  successfully (${iterations})`);
+		await sleep(duration);
+
+		await callAPIfn(checkOut);
+		log(`Checked out successfully (${iterations})`);
+		await sleep(cooldown);
 	}
-
-	return { score: '10000' };
 }
 
-async function checkIn(details) {
-	if (details == null) return;
+// Handler
 
-	let URLPath = APILink + 'Service/CheckIn';
-
-	let requestBody1 = `v=107&code=${details.ticketp1}&id=${details.playerIdp1}&pid[]=${details.playerIdp1}&pid[]=${details.playerIdp2}`;
-	let requestBody2 = `v=107&code=${details.ticketp2}&id=${details.playerIdp2}&pid[]=${details.playerIdp1}&pid[]=${details.playerIdp2}`;
-	let header1 = { headers: { 'Content-Length': requestBody1.length, 'User-Agent': '', 'Accept-Encoding': '' } };
-	let header2 = { headers: { 'Content-Length': requestBody2.length, 'User-Agent': '', 'Accept-Encoding': '' } };
-
-	console.log(`check IN p1: ${URLPath}, ${requestBody1}`);
-	console.log(`check IN p2: ${URLPath}, ${requestBody2}`);
-
-	if (!debugging) {
-		let response1 = await axios.post(URLPath, requestBody1, header1);
-		let response2 = await axios.post(URLPath, requestBody2, header2);
-
-		return `${response1.status}-${response2.status}`;
+async function callAPIfn(fn) {
+	try {
+		return await fn();
+	} catch (e) {
+		log(`Error occured: ${e.message}`);
+		process.exit(1);
 	}
-
-	return '200-200';
 }
 
-async function checkOut(details) {
-	let URLPath = APILink + 'Service/CheckOut';
+// API calls
 
-	if (details == null) return;
+async function getRankingDetails(ticket, pid) {
+	let requestBody = `v=107&code=${ticket}&id=${pid}`;
 
-	let requestBody1 = `v=107&code=${details.ticketp1}&id=${details.playerIdp1}&pscore[]=${details.p1score}&pscore[]=${details.p2score}`;
-	let requestBody2 = `v=107&code=${details.ticketp2}&id=${details.playerIdp2}&pscore[]=${details.p1score}&pscore[]=${details.p2score}`;
-	let header1 = { headers: { 'Content-Length': requestBody1.length, 'User-Agent': '', 'Accept-Encoding': '' } };
-	let header2 = { headers: { 'Content-Length': requestBody2.length, 'User-Agent': '', 'Accept-Encoding': '' } };
-
-	console.log(`check OUT p1: ${URLPath}, ${requestBody1}`);
-	console.log(`check OUT p2: ${URLPath}, ${requestBody2}`);
-
-	if (!debugging) {
-		let response1 = await axios.post(URLPath, requestBody1, header1);
-		let response2 = await axios.post(URLPath, requestBody2, header2);
-
-		return `${response1.status}-${response2.status}`;
+	try {
+		return (await post(pathGetRanking, requestBody)).data.score;
+	} catch (e) {
+		log(`Error occured: ${e.message}`);
+		process.exit(1);
 	}
-
-	return '200-200';
 }
 
-app.post('/api/get-details', async (req, res) => {
-	let response = await getRankingDetails(req.body);
-	res.json(response);
-});
+async function checkIn() {
+	let body1 = `v=107&code=${p1ticket}&id=${p1id}&pid[]=${p1id}&pid[]=${p2id}`;
+	let body2 = `v=107&code=${p2ticket}&id=${p2id}&pid[]=${p1id}&pid[]=${p2id}`;
 
-app.post('/api/check-in', async (req, res) => {
-	let response = await checkIn(req.body);
-	res.json(response);
-});
+	try {
+		await post(pathCheckIn, body1);
+		await post(pathCheckIn, body2);
+	} catch (e) {
+		throw e;
+	}
+}
 
-app.post('/api/check-out', async (req, res) => {
-	let response = await checkOut(req.body);
-	res.json(response);
-});
+async function checkOut() {
+	let body1 = `v=107&code=${p1ticket}&id=${p1id}&pscore[]=${p1score}&pscore[]=${p2score}`;
+	let body2 = `v=107&code=${p2ticket}&id=${p2id}&pscore[]=${p1score}&pscore[]=${p2score}`;
 
-app.listen(8000);
-console.log('Website is running at http://localhost:8000');
+	try {
+		await post(pathCheckOut, body1);
+		await post(pathCheckOut, body2);
+	} catch (e) {
+		throw e;
+	}
+}
+
+async function post(path, body) {
+	let link = APILink + path;
+	let headers = { headers: { 'Content-Length': body.length, 'User-Agent': '', 'Accept-Encoding': '' } };
+	try {
+		if (!debugging) return await axios.post(link, body, headers);
+		else return { data: { score: 10000 } };
+	} catch (e) {
+		throw e;
+	}
+}
+
+// aux functions
+
+function randomiseScores() {
+	if (getRandom(0, 101) < 95) {
+		p1score = 3;
+		p2score = getRandom(0, 3);
+	} else {
+		p1score = getRandom(0, 3);
+		p2score = 3;
+	}
+}
+
+async function sleep(ms) {
+	return new Promise((resolve) => setTimeout(resolve, ms * 1000));
+}
+
+function getRandom(min, max) {
+	return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function log(message) {
+	function pad(number) {
+		return number < 10 ? '0' + number : number;
+	}
+
+	const now = new Date();
+	const hours = pad(now.getHours());
+	const minutes = pad(now.getMinutes());
+	const seconds = pad(now.getSeconds());
+	const timestamp = `${hours}:${minutes}:${seconds}`;
+	const logMessage = `[${timestamp}] ${message}\n`;
+
+	process.stdout.write(logMessage);
+	fs.appendFile('log.txt', logMessage, (err) => {
+		if (err) {
+			console.error('Error writing to log file', err);
+		}
+	});
+}
+
+// start
+
+main();

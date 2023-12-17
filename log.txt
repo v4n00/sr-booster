@@ -1,0 +1,2 @@
+[13:42:18] Starting service
+[13:42:22] Player 1 rank: 13770
