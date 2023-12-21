@@ -1,9 +1,7 @@
 import axios from 'axios';
 import fs from 'fs';
-import PromptSync from 'prompt-sync';
 
 // ----- constants -----
-const prompt = PromptSync();
 axios.defaults.headers.common = {};
 let APILink = 'http://league.speedrunners.doubledutchgames.com/';
 let pathGetRanking = 'Service/GetRanking';
@@ -23,30 +21,16 @@ let cooldown = 0;
 let p1score = 3;
 let p2score = 0;
 let iterations = 0;
+let ranks = 0;
 // ----- end -----
 
 async function main() {
-	log('Starting service');
+	log('Starting service in 15 seconds...');
 
-	// ask for player id
-	let input;
-	input = prompt('player 1 ID: ');
-	p1id = input == 0 ? p1id : input;
-	input = prompt('player 2 ID: ');
-	p2id = input == 0 ? p2id : input;
-
-	// ask for tickets
-	input = prompt('player 1 ticket: ');
-	p1ticket = input == 0 ? p1ticket : input;
-	input = prompt('player 2 ticket: ');
-	p2ticket = input == 0 ? p2ticket : input;
-
-	// cold start
-	log(`Player 1 rank: ${await getRankingDetails(p1ticket, p1id)}`);
-	log(`Player 2 rank: ${await getRankingDetails(p2ticket, p2id)}`);
-
-	input = prompt('Start? ');
-	if (input == 0) process.exit(0);
+	// set ranking timer
+	callGetRankingDetails();
+	setInterval(callGetRankingDetails, 300 * 1000);
+	await sleep(15);
 
 	while (true) {
 		iterations++;
@@ -70,9 +54,13 @@ async function callAPIfn(fn) {
 	try {
 		return await fn();
 	} catch (e) {
-		log(`Error occured: ${e.message}`);
-		process.exit(1);
+		errorHandler(e);
 	}
+}
+
+async function callGetRankingDetails() {
+	log(`Player 1 rank: ${await getRankingDetails(p1ticket, p1id)}`);
+	log(`Player 2 rank: ${await getRankingDetails(p2ticket, p2id)}`);
 }
 
 // API calls
@@ -83,8 +71,7 @@ async function getRankingDetails(ticket, pid) {
 	try {
 		return (await post(pathGetRanking, requestBody)).data.score;
 	} catch (e) {
-		log(`Error occured: ${e.message}`);
-		process.exit(1);
+		errorHandler(e);
 	}
 }
 
@@ -124,6 +111,11 @@ async function post(path, body) {
 }
 
 // aux functions
+async function errorHandler(e) {
+	log(`Error occured: ${e.response.status} - ${e.message}`);
+	if (e.response.status == 401) process.exit(1);
+	await sleep(30);
+}
 
 function randomiseScores() {
 	if (getRandom(0, 101) < 95) {
@@ -135,8 +127,8 @@ function randomiseScores() {
 	}
 }
 
-async function sleep(ms) {
-	return new Promise((resolve) => setTimeout(resolve, ms * 1000));
+async function sleep(seconds) {
+	return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
 
 function getRandom(min, max) {
