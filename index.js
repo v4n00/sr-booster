@@ -21,7 +21,6 @@ let cooldown = 0;
 let p1score = 3;
 let p2score = 0;
 let iterations = 0;
-let ranks = 0;
 // ----- end -----
 
 async function main() {
