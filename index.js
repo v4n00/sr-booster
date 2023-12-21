@@ -28,7 +28,7 @@ async function main() {
 
 	// set ranking timer
 	callGetRankingDetails();
-	setInterval(callGetRankingDetails, 300 * 1000);
+	setInterval(callGetRankingDetails, 600 * 1000);
 	await sleep(15);
 
 	while (true) {
@@ -111,7 +111,7 @@ async function post(path, body) {
 
 // aux functions
 async function errorHandler(e) {
-	log(`Error occured: ${e.response.status} - ${e.message}`);
+	log(`Error occured: ${e.response.status || 0} - ${e.message}`);
 	if (e.response.status == 401) process.exit(1);
 	await sleep(30);
 }
