@@ -1,20 +1,15 @@
-import axios from 'axios';
-import fs from 'fs';
-
 // ----- constants -----
-axios.defaults.headers.common = {};
 let APILink = 'http://league.speedrunners.doubledutchgames.com/';
 let pathGetRanking = 'Service/GetRanking';
 let pathCheckIn = 'Service/CheckIn';
 let pathCheckOut = 'Service/CheckOut';
 // ----- configuration -----
-let debugging = false;
 let checkOutAverage = 90; // default: 90
 let cooldownAverage = 45; // default: 45
-let p1id = 969447309;
-let p2id = 48800273;
-let p1ticket = 1076816120;
-let p2ticket = 1486945010;
+let p1id = 0;
+let p2id = 0;
+let p1code = 0;
+let p2code = 0;
 // ----- variables -----
 let duration = 0;
 let cooldown = 0;
@@ -26,7 +21,6 @@ let iterations = 0;
 async function main() {
 	log('Starting service in 15 seconds...');
 
-	// set ranking timer
 	callGetRankingDetails();
 	setInterval(callGetRankingDetails, 600 * 1000);
 	await sleep(15);
@@ -47,8 +41,6 @@ async function main() {
 	}
 }
 
-// Handler
-
 async function callAPIfn(fn) {
 	try {
 		return await fn();
@@ -58,11 +50,9 @@ async function callAPIfn(fn) {
 }
 
 async function callGetRankingDetails() {
-	log(`Player 1 rank: ${await getRankingDetails(p1ticket, p1id)}`);
-	log(`Player 2 rank: ${await getRankingDetails(p2ticket, p2id)}`);
+	log(`Player 1 rank: ${await getRankingDetails(p1code, p1id)}`);
+	log(`Player 2 rank: ${await getRankingDetails(p2code, p2id)}`);
 }
-
-// API calls
 
 async function getRankingDetails(ticket, pid) {
 	let requestBody = `v=107&code=${ticket}&id=${pid}`;
@@ -75,45 +65,29 @@ async function getRankingDetails(ticket, pid) {
 }
 
 async function checkIn() {
-	let body1 = `v=107&code=${p1ticket}&id=${p1id}&pid[]=${p1id}&pid[]=${p2id}`;
-	let body2 = `v=107&code=${p2ticket}&id=${p2id}&pid[]=${p1id}&pid[]=${p2id}`;
+	let body1 = `v=107&code=${p1code}&id=${p1id}&pid[]=${p1id}&pid[]=${p2id}`;
+	let body2 = `v=107&code=${p2code}&id=${p2id}&pid[]=${p1id}&pid[]=${p2id}`;
 
-	try {
-		await post(pathCheckIn, body1);
-		await post(pathCheckIn, body2);
-	} catch (e) {
-		throw e;
-	}
+	await post(pathCheckIn, body1);
+	await post(pathCheckIn, body2);
 }
 
 async function checkOut() {
-	let body1 = `v=107&code=${p1ticket}&id=${p1id}&pscore[]=${p1score}&pscore[]=${p2score}`;
-	let body2 = `v=107&code=${p2ticket}&id=${p2id}&pscore[]=${p1score}&pscore[]=${p2score}`;
+	let body1 = `v=107&code=${p1code}&id=${p1id}&pscore[]=${p1score}&pscore[]=${p2score}`;
+	let body2 = `v=107&code=${p2code}&id=${p2id}&pscore[]=${p1score}&pscore[]=${p2score}`;
 
-	try {
-		await post(pathCheckOut, body1);
-		await post(pathCheckOut, body2);
-	} catch (e) {
-		throw e;
-	}
+	await post(pathCheckOut, body1);
+	await post(pathCheckOut, body2);
 }
 
 async function post(path, body) {
-	let link = APILink + path;
-	let headers = { headers: { 'Content-Length': body.length, 'User-Agent': '', 'Accept-Encoding': '' } };
-	try {
-		if (!debugging) return await axios.post(link, body, headers);
-		else return { data: { score: 10000 } };
-	} catch (e) {
-		throw e;
-	}
+	let headers = { headers: { 'Content-Length': body.length } };
+	return (await fetch(APILink + path, { method: 'POST', body: body, headers: headers })).json();
 }
 
-// aux functions
 async function errorHandler(e) {
 	log(`Error occured: ${e.response.status || 0} - ${e.message}`);
 	if (e.response.status == 401) process.exit(1);
-	await sleep(30);
 }
 
 function randomiseScores() {
@@ -135,25 +109,11 @@ function getRandom(min, max) {
 }
 
 function log(message) {
-	function pad(number) {
-		return number < 10 ? '0' + number : number;
-	}
-
+	const pad = (n) => (n < 10 ? '0' + n : n);
 	const now = new Date();
-	const hours = pad(now.getHours());
-	const minutes = pad(now.getMinutes());
-	const seconds = pad(now.getSeconds());
-	const timestamp = `${hours}:${minutes}:${seconds}`;
-	const logMessage = `[${timestamp}] ${message}\n`;
+	const logMessage = `[${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}] ${message}\n`;
 
 	process.stdout.write(logMessage);
-	fs.appendFile('log.txt', logMessage, (err) => {
-		if (err) {
-			console.error('Error writing to log file', err);
-		}
-	});
 }
-
-// start
 
 main();
