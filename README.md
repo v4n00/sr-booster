@@ -12,7 +12,7 @@ The application is meant to be ran on a Raspberry Pi.
 
 # Instructions
 
-1. open the [index file](./index.js) at the top where you can find the configuration variables
+1. open the [index.js](./index.js) file at the top where you can find the configuration variables
 2. get the [steam3ID's](https://steamrep.com/) (the number after the second `:`) of both accounts and place them in `p1id` and `p2id` (player 1 is the player who will win the matches)
 3. launch your preffered network analyzer app
 4. launch SpeedRunners
