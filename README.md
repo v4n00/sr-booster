@@ -12,9 +12,16 @@ The application is meant to be ran on a Raspberry Pi.
 
 ## Instructions
 
-1. open the [index.js](./index.js) file at the top where you can find the configuration variables
-2. get the [steam3ID's](https://steamrep.com/) (the number after the second `:`) of the accounts and place them in `playerIds` array (first player is favored to win, based on `playerWinProbability` variable)
-3. launch your preffered network analyzer app
-4. launch SpeedRunners
-5. from any request that sends your `code` (like `GetRankingDetails`), grab the `code` and place it in `playerTickets` array, make sure the order matches the `playerIds` array
-6. run `node index.js`
+1. run `npm i` command in the root directory
+2. open the [index.js](./index.js) file at the top where you can find the configuration variables
+3. get the [steam3ID's](https://steamrep.com/) (the number after the second `:`) of the accounts and place them in `playerIds` array (first player is favored to win)
+4. launch your preffered network analyzer app
+5. launch SpeedRunners
+6. from any request that sends your `code` (like `GetRankingDetails`), grab the `code` and place it in `playerTickets` array, make sure the order matches the `playerIds` array
+7. run `node index.js`
+
+## Additional configuration variables
+
+- `playerWinProbability` - probability of the first player winning the match
+- `checkInCooldownAverage` - how long a game lasts
+- `checkOutCooldownAverage` - how long until the next game starts

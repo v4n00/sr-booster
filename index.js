@@ -1,10 +1,18 @@
 // ----- configuration -----
-const checkInCooldownAverage = 90; // default: 90, cooldown for how long the game lasts
-const checkOutCooldownAverage = 45; // default: 45, cooldown for in between games
-const playerIds = []; // place player IDs here, separated by commas, first player is the favored one
-const playerTickets = []; // place player tickets here, must be in the same order as player IDs
-const playerWinProbability = 95; // default: 95, win probability of first player
-// ----- constants & variables -----
+const playerIds = [];
+const playerTickets = [];
+const checkInCooldownAverage = 90; // default: 90
+const checkOutCooldownAverage = 45; // default: 45
+const playerWinProbability = 95; // default: 95
+// ----- setup & variables -----
+const axios = require('axios').create();
+axios.interceptors.request.use((config) => {
+	config.headers['Content-Type'] = null;
+	config.headers['User-Agent'] = null;
+	config.headers['Accept'] = null;
+	config.headers['Accept-Encoding'] = null;
+	return config;
+});
 const APILink = 'http://league.speedrunners.doubledutchgames.com/';
 const pathGetRanking = 'Service/GetRanking';
 const pathCheckIn = 'Service/CheckIn';
@@ -27,8 +35,8 @@ const main = async () => {
 		log(`Number of players: ${numberOfPlayers}`);
 	}
 
-	callGetRankingDetails();
-	setInterval(callGetRankingDetails, 10 * 60 * 1000);
+	getRankingDetails();
+	setInterval(getRankingDetails, 10 * 60 * 1000);
 	await sleep(10);
 
 	while (true) {
@@ -37,37 +45,28 @@ const main = async () => {
 		checkOutCooldown = getRandom(checkOutCooldownAverage - 10, checkOutCooldownAverage + 10);
 		randomiseScores();
 
-		await callAPIfn(checkIn);
-		log(`Checked in  successfully (${iterations})`);
-		await sleep(checkInCooldown);
+		try {
+			await checkIn();
+			log(`Checked in  successfully (${iterations})`);
+			await sleep(checkInCooldown);
 
-		await callAPIfn(checkOut);
-		log(`Checked out successfully (${iterations})`);
-		await sleep(checkOutCooldown);
+			await checkOut();
+			log(`Checked out successfully (${iterations})`);
+			await sleep(checkOutCooldown);
+		} catch (e) {
+			errorHandler(e);
+		}
 	}
 };
 
-const callAPIfn = async (fn) => {
-	try {
-		return await fn();
-	} catch (e) {
-		errorHandler(e);
-	}
-};
-
-const callGetRankingDetails = async () => {
+const getRankingDetails = async () => {
 	for (let i = 0; i < numberOfPlayers; i++) {
-		log(`Player ${i + 1} rank: ${await getRankingDetails(playerTickets[i], playerIds[i])}`);
-	}
-};
-
-const getRankingDetails = async (playerTicket, playerId) => {
-	let requestBody = `v=107&code=${playerTicket}&id=${playerId}`;
-
-	try {
-		return (await post(pathGetRanking, requestBody)).data.score;
-	} catch (e) {
-		errorHandler(e);
+		const requestBody = `v=107&code=${playerTickets[i]}&id=${playerIds[i]}`;
+		try {
+			log(`Player ${i + 1} rank: ${(await axios.post(APILink + pathGetRanking, requestBody)).data.score}`);
+		} catch (e) {
+			errorHandler(e);
+		}
 	}
 };
 
@@ -77,7 +76,7 @@ const checkIn = async () => {
 		for (let j = 0; j < numberOfPlayers; j++) {
 			body += `&pid[]=${playerIds[j]}`;
 		}
-		await post(pathCheckIn, body);
+		await axios.post(APILink + pathCheckIn, body);
 	}
 };
 
@@ -87,18 +86,17 @@ const checkOut = async () => {
 		for (let j = 0; j < numberOfPlayers; j++) {
 			body += `&pscore[]=${playerScores[j]}`;
 		}
-		await post(pathCheckOut, body);
+		await axios.post(APILink + pathCheckOut, body);
 	}
 };
 
-const post = async (path, body) => {
-	let headers = { headers: { 'Content-Length': body.length } };
-	return (await fetch(APILink + path, { method: 'POST', body: body, headers: headers })).json();
-};
-
 const errorHandler = async (e) => {
-	log(`Error occured: ${e.response.status || 0} - ${e.message}`);
-	if (e.response.status == 401) process.exit(1);
+	if (e.response) {
+		log(`Error occured: ${e.response.status || 0} - ${e.message}`);
+		if (e.response.status == 401) process.exit(1);
+	} else {
+		log(`Unknown error occured: ${e.message}`);
+	}
 };
 
 const randomiseScores = () => {
