@@ -4,6 +4,7 @@ const playerTickets = [];
 const checkInCooldownAverage = 90; // default: 90
 const checkOutCooldownAverage = 45; // default: 45
 const playerWinProbability = 95; // default: 95
+const isEloSeason = true; // default: false
 // ----- setup & variables -----
 const axios = require('axios').create();
 axios.interceptors.request.use((config) => {
@@ -62,8 +63,9 @@ const main = async () => {
 const getRankingDetails = async () => {
 	for (let i = 0; i < numberOfPlayers; i++) {
 		const requestBody = `v=107&code=${playerTickets[i]}&id=${playerIds[i]}`;
+		const response = (await axios.post(APILink + pathGetRanking, requestBody)).data;
 		try {
-			log(`Player ${i + 1} rank: ${(await axios.post(APILink + pathGetRanking, requestBody)).data.elo_rating}`);
+			log(`Player ${i + 1} rank: ${isEloSeason ? response.elo_rating : response.score}`);
 		} catch (e) {
 			errorHandler(e);
 		}

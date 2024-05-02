@@ -23,6 +23,7 @@ This small application was created to simulate ranked matches in the game [Speed
 - `playerWinProbability` - probability of the first player winning the match
 - `checkInCooldownAverage` - how long a game lasts
 - `checkOutCooldownAverage` - how long until the next game starts
+- `isEloSeason` - if the game is in elo season
 
 ## Errors
 
