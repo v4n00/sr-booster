@@ -16,7 +16,7 @@ This small application was created to simulate ranked matches in the game [Speed
 4. launch your preffered network analyzer app
 5. launch SpeedRunners
 6. from any request that sends your `code` (like `GetRankingDetails`), grab the `code` and place it in `playerTickets` array, make sure the order matches the `playerIds` array
-7. run `node index.js`
+7. run `node index.js` command in the root directory
 
 ## Additional configuration variables
 
