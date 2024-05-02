@@ -51,7 +51,7 @@ const main = async () => {
 			await sleep(checkInCooldown);
 
 			await checkOut();
-			log(`Checked out successfully (${iterations})`);
+			log(`Checked out successfully (${iterations}), player scores: [${playerScores}]`);
 			await sleep(checkOutCooldown);
 		} catch (e) {
 			errorHandler(e);
@@ -63,7 +63,7 @@ const getRankingDetails = async () => {
 	for (let i = 0; i < numberOfPlayers; i++) {
 		const requestBody = `v=107&code=${playerTickets[i]}&id=${playerIds[i]}`;
 		try {
-			log(`Player ${i + 1} rank: ${(await axios.post(APILink + pathGetRanking, requestBody)).data.score}`);
+			log(`Player ${i + 1} rank: ${(await axios.post(APILink + pathGetRanking, requestBody)).data.elo_rating}`);
 		} catch (e) {
 			errorHandler(e);
 		}
