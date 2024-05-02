@@ -23,3 +23,10 @@ This small application was created to simulate ranked matches in the game [Speed
 - `playerWinProbability` - probability of the first player winning the match
 - `checkInCooldownAverage` - how long a game lasts
 - `checkOutCooldownAverage` - how long until the next game starts
+
+## Errors
+
+- sometimes, the tickets expire and you get a `401` error when checking in, if that happens, grab the tickets again
+- if you generate a new ticket, the previous tickets are invalidated, so make sure you don't relaunch the game
+- unused tickets stay valid for ~5 minutes
+- used tickets stay valid for ~24 hours
